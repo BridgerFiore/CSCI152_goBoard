@@ -3,13 +3,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Go {
-    static String[][] goBoard = new String[9][9];
+    static String[][] goBoard = {
+        {null, null, "-◯", "-◯", null, null, null, null, null},
+        {null, "-◯", "-●", "-●", "-◯", null, null, null, null},
+        {null, "-◯", "-●", null, "-●", "-◯", null, null, null},
+        {null, "-◯", "-●", "-●", "-●", "-◯", null, null, null},
+        {null, "-◯", "-●", null, "-●", "-◯", null, null, null},
+        {null, null, "-◯", "-●", "-●", "-◯", null, null, null},
+        {null, null, null, "-◯", "-◯", null, null, null, null},
+        {null, null, null, null, null, null, null, null, null},
+        {null, null, null, null, null, null, null, null, null}
+    };
     static boolean[][] checked = new boolean[9][9];
+    static boolean[][] lives = new boolean[9][9];
+    static boolean[][] territory = new boolean[9][9];
+    static boolean[][] beenChecked = new boolean[9][9];
     static final int BOARD_SIZE = 9;
 
     public static void main(String[] args) {
         boolean turn = true; // true for Black, false for White
         Scanner scn = new Scanner(System.in);
+
+        initializeLookupTables();
 
         while (true) {
             displayBoard();
@@ -21,56 +36,48 @@ public class Go {
             
             goBoard[moveY][moveX] = turn ? "-●" : "-◯";
             
-            captureOpponentPieces(!turn);
+            processTurn(moveY, moveX);
             
             turn = !turn;
         }
     }
 
-    private static void displayBoard() {
-        System.out.println("  0 1 2 3 4 5 6 7 8");
+    private static void initializeLookupTables() {
         for (int i = 0; i < BOARD_SIZE; i++) {
-            System.out.print(i + " ");
             for (int j = 0; j < BOARD_SIZE; j++) {
-                if (goBoard[i][j] == null) {
-                    System.out.print(j == 0 ? "|" : "-|");
-                } else {
-                    System.out.print(goBoard[i][j]);
-                }
+                lives[i][j] = true;
+                territory[i][j] = false;
+                beenChecked[i][j] = false;
             }
-            System.out.println();
         }
     }
 
-    private static int[] getValidMove(Scanner scn, boolean turn) {
-        while (true) {
-            System.out.println("Enter coordinates (row column): ");
-            String[] input = scn.nextLine().split(" ");
-            if (input.length != 2) {
-                System.out.println("Invalid input. Please enter two numbers.");
-                continue;
-            }
-            
-            try {
-                int moveY = Integer.parseInt(input[0]);
-                int moveX = Integer.parseInt(input[1]);
-                
-                if (moveY < 0 || moveY >= BOARD_SIZE || moveX < 0 || moveX >= BOARD_SIZE) {
-                    System.out.println("Out of bounds. Try again.");
-                    continue;
-                }
-                
-                if (goBoard[moveY][moveX] != null) {
-                    System.out.println("Space already occupied. Try again.");
-                    continue;
-                }
-                
-                return new int[]{moveY, moveX};
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter numbers.");
+    private static void processTurn(int y, int x) {
+        updateLookupTables(y, x);
+        captureOpponentPieces(!isBlackPiece(goBoard[y][x]));
+    }
+
+    private static void updateLookupTables(int y, int x) {
+        resetBeenChecked();
+        if (!hasLiberties(y, x)) {
+            lives[y][x] = false;
+        }
+
+    }
+
+    private static void resetBeenChecked() {
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                beenChecked[i][j] = false;
             }
         }
     }
+
+    private static boolean isBlackPiece(String piece) {
+        return "-●".equals(piece);
+    }
+
+
 
     private static void captureOpponentPieces(boolean opponentColor) {
         for (int i = 0; i < BOARD_SIZE; i++) {
@@ -78,6 +85,7 @@ public class Go {
                 if (goBoard[i][j] != null && goBoard[i][j].equals(opponentColor ? "-●" : "-◯")) {
                     if (!hasLiberties(i, j)) {
                         removePiece(i, j);
+                        lives[i][j] = false;
                     }
                 }
             }
@@ -86,11 +94,11 @@ public class Go {
     }
 
     private static boolean hasLiberties(int y, int x) {
-        if (y < 0 || y >= BOARD_SIZE || x < 0 || x >= BOARD_SIZE || checked[y][x]) {
+        if (y < 0 || y >= BOARD_SIZE || x < 0 || x >= BOARD_SIZE || beenChecked[y][x]) {
             return false;
         }
         
-        checked[y][x] = true;
+        beenChecked[y][x] = true;
         
         if (goBoard[y][x] == null) {
             return true;
@@ -102,17 +110,7 @@ public class Go {
                hasLiberties(y, x-1) || hasLiberties(y, x+1);
     }
 
-    private static void removePiece(int y, int x) {
-        goBoard[y][x] = null;
-    }
 
-    private static void resetChecked() {
-        for (int i = 0; i < BOARD_SIZE; i++) {
-            for (int j = 0; j < BOARD_SIZE; j++) {
-                checked[i][j] = false;
-            }
-        }
-    }
 }
 
 
